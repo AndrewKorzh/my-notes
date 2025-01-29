@@ -1,11 +1,10 @@
-from fastapi import FastAPI, HTTPException, Request, Depends
+from fastapi import FastAPI, HTTPException, Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.responses import JSONResponse
 
 from pydantic import BaseModel
 import jwt
 import datetime
-from typing import Optional
 import bcrypt
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware

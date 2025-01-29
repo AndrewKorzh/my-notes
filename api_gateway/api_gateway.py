@@ -11,6 +11,7 @@ MICROSERVICE_SECRET_KEY = "MICROSERVICE_SECRET_KEY"
 
 SERVICES = {
     "authorization_service": "http://127.0.0.1:8000",
+    "notes": "http://127.0.0.1:8080",
 }
 
 
@@ -45,14 +46,7 @@ app.add_middleware(
 )
 http_client = CustomAsyncClient()
 
-def verify_token(token: str):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload
-    except jwt.PyJWTError:
-        return None
-
-@app.post("/auth/login")
+@app.post("/authorization/login")
 async def login(request: Request):
     response = await http_client.post(f"{SERVICES['authorization_service']}/login", content=await request.body())
     if response.status_code != 200:
@@ -66,7 +60,7 @@ async def login(request: Request):
         )
     return response.json()
 
-@app.post("/auth/register")
+@app.post("/authorization/register")
 async def register(request: Request):
     response = await http_client.post(f"{SERVICES['authorization_service']}/register", content=await request.body())
     if response.status_code != 200:
@@ -80,10 +74,40 @@ async def register(request: Request):
         )
     return response.json()
 
-@app.get("/protected")
-async def protected_route(token: str = Depends(verify_token)):
-    if token is None:
-        raise HTTPException(status_code=401, detail="Не авторизован")
+def verify_token(request: Request):
+    authorization_header = request.headers.get("authorization-client")
+    if authorization_header is None:
+        raise HTTPException(status_code=403, detail="Authorization header missing")
+    if authorization_header.startswith("Bearer "):
+        token = authorization_header.split(" ")[1]
+    else:
+        raise HTTPException(status_code=403, detail="Invalid token format")
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=403, detail="Invalid token")
+    
+@app.get("/notes/all_notes")
+async def protected_route(token: dict = Depends(verify_token)):
+
+    response = await http_client.get(f"{SERVICES['notes']}/all_user_notes/{token["sub"]}")
+    if response.status_code != 200:
+        try:
+            error_detail = response.json()["detail"]
+        except:
+            error_detail = response.json()
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=error_detail
+        )
+    return response.json()
+
+    # return {"message": "Этот ресурс защищён", "user": token["sub"], "token": token}
+
+    
+@app.get("/protected_data")
+async def protected_route(token: dict = Depends(verify_token)):
     return {"message": "Этот ресурс защищён", "user": token["sub"], "token": token}
 
 @app.on_event("shutdown")

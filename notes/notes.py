@@ -9,7 +9,9 @@ import bcrypt
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 
-DB_PATH = "user_auth.db"
+from db_handler import DBHandler
+
+DB_PATH = "notes.db"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 SECRET_KEY = "SECRET_KEY"
@@ -41,7 +43,6 @@ class MicroserviceAuthMiddleware(BaseHTTPMiddleware):
         )
     
 app = FastAPI()
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"], # Все источники
@@ -54,7 +55,9 @@ app.add_middleware(MicroserviceAuthMiddleware)
 
 @app.get("/all_user_notes/{username}")
 async def protected_route(username: str):
-    return {"message": f"Это все записи {username}"}
+    db = DBHandler(DB_PATH)
+    notes = db.get_notes_by_user(username=username)
+    return {"message": f"Это все записи {username}", "notes":notes}
 
 
 if __name__ == "__main__":

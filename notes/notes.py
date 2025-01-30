@@ -42,6 +42,12 @@ class MicroserviceAuthMiddleware(BaseHTTPMiddleware):
             content={"detail": error_detail}
         )
     
+class NoteRequest(BaseModel):
+    text: str
+
+class DeleteNotesRequest(BaseModel):
+    note_ids: list[int]
+
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
@@ -52,13 +58,31 @@ app.add_middleware(
 )
 app.add_middleware(MicroserviceAuthMiddleware)
 
-
+# Добавить проверочки чтобы ошибки мониторить
 @app.get("/all_user_notes/{username}")
-async def protected_route(username: str):
+async def all_user_notes(username: str):
     db = DBHandler(DB_PATH)
     notes = db.get_notes_by_user(username=username)
     return {"message": f"Это все записи {username}", "notes":notes}
 
+@app.post("/add_note/{username}")
+async def add_note(username: str, note: NoteRequest):
+    db = DBHandler(DB_PATH)
+    success = db.add_note(username=username, text=note.text)
+    if success:
+        return {"message": f"Заметка добавлена для {username}"}
+    else:
+        raise HTTPException(status_code=500, detail="Ошибка при добавлении заметки")
+    
+# удалять лучше списком
+@app.post("/delete_notes/{username}")
+async def delete_notes(username: str, delete_request: DeleteNotesRequest):
+    db = DBHandler(DB_PATH)
+    success = db.delete_notes(username=username, note_ids=delete_request.note_ids)
+    if success:
+        return {"message": f"Заметки {delete_request.note_ids} успешно удалены для {username}"}
+    else:
+        raise HTTPException(status_code=400, detail="Ошибка при удалении заметок или заметки не принадлежат пользователю")
 
 if __name__ == "__main__":
     uvicorn.run("notes:app", host="0.0.0.0", port=8080, reload=True)

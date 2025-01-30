@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 import httpx
 import uvicorn
 import jwt
@@ -88,8 +89,8 @@ def verify_token(request: Request):
     except jwt.PyJWTError:
         raise HTTPException(status_code=403, detail="Invalid token")
     
-@app.get("/notes/all_notes")
-async def protected_route(token: dict = Depends(verify_token)):
+@app.get("/notes/all_user_notes")
+async def all_user_notes(token: dict = Depends(verify_token)):
 
     response = await http_client.get(f"{SERVICES['notes']}/all_user_notes/{token["sub"]}")
     if response.status_code != 200:
@@ -103,12 +104,52 @@ async def protected_route(token: dict = Depends(verify_token)):
         )
     return response.json()
 
-    # return {"message": "Этот ресурс защищён", "user": token["sub"], "token": token}
+class NoteRequest(BaseModel):
+    text: str
 
-    
-@app.get("/protected_data")
-async def protected_route(token: dict = Depends(verify_token)):
-    return {"message": "Этот ресурс защищён", "user": token["sub"], "token": token}
+@app.post("/notes/add_note")
+async def add_note(note: NoteRequest, token: dict = Depends(verify_token)):
+    text = note.text
+    response = await http_client.post(
+        f"{SERVICES['notes']}/add_note/{token['sub']}", 
+        json={"text": text}
+    )
+
+    if response.status_code != 200:
+        try:
+            error_detail = response.json().get("detail", "Unknown error")
+        except:
+            error_detail = response.text
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=error_detail
+        )
+
+    return response.json()
+
+class DeleteNotesRequest(BaseModel):
+    note_ids: list[int]
+
+@app.post("/notes/delete_user_notes")
+async def delete_user_notes(delete_request: DeleteNotesRequest, token: dict = Depends(verify_token)):
+    note_ids=delete_request.note_ids
+    response = await http_client.post(
+        f"{SERVICES['notes']}/delete_notes/{token['sub']}", 
+        json={"note_ids": note_ids}
+    )
+
+    if response.status_code != 200:
+        try:
+            error_detail = response.json().get("detail", "Unknown error")
+        except:
+            error_detail = response.text
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=error_detail
+        )
+
+    return response.json()
+
 
 @app.on_event("shutdown")
 async def shutdown_event():

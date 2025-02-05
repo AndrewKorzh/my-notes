@@ -12,6 +12,7 @@ export const AuthProvider = ({ children }) => {
     if (savedToken) {
       setToken(savedToken);
     }
+    navigate("/home");
   }, []);
 
   const login = (token) => {

@@ -46,7 +46,14 @@ const Login = () => {
 
   return (
     <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", backgroundColor: "#f0f0f0" }}>
-      <Card style={{ padding: 20, width: 350 }}>
+        <Card
+          style={{
+            padding: 20,
+            width: "100%",
+            maxWidth: 350,
+            margin: "0 10px",
+          }}
+        >
         <Typography variant="h5" align="center">Вход</Typography>
         <CardContent>
           <TextField 

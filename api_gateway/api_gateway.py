@@ -63,6 +63,8 @@ async def login(request: Request):
 
 @app.post("/authorization/register")
 async def register(request: Request):
+    content=await request.body()
+    print(content)
     response = await http_client.post(f"{SERVICES['authorization_service']}/register", content=await request.body())
     if response.status_code != 200:
         try:

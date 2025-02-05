@@ -111,6 +111,7 @@ async def login(request: LoginRequest):
 
 @app.post("/register", response_model=Token)
 async def registration(request: RegisterRequest):
+    print(request.json())
     db = DBHandler(DB_PATH)
     if db.user_exists(request.username):
         raise HTTPException(status_code=400, detail="Такой пользователь существует")

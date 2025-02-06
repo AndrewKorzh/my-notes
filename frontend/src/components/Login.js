@@ -3,6 +3,7 @@ import axios from 'axios';
 import { TextField, Button, Card, CardContent, Typography, IconButton, InputAdornment } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { AuthContext } from "../context/AuthContext";
+import { AppContext } from "../context/AppContext";
 import { Link } from "react-router-dom";
 
 const Login = () => {
@@ -11,9 +12,10 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const { login } = useContext(AuthContext);
+  const { globalState } = useContext(AppContext)
+  const baseURL = globalState.baseURL
 
   const handleLogin = async () => {
-    const baseURL = "http://127.0.0.1:5000"
     const data = {
       username: username,
       password: password

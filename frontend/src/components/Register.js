@@ -4,11 +4,14 @@ import { TextField, Button, Card, CardContent, Typography, IconButton, InputAdor
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { Link } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
+import { AppContext } from "../context/AppContext";
 
 
 
 const Register = () => {
-  const baseURL = "http://127.0.0.1:5000"
+  // const baseURL = "http://127.0.0.1:5000"
+  const { globalState } = useContext(AppContext)
+  const baseURL = globalState.baseURL
 
   const { login } = useContext(AuthContext);
 
@@ -17,6 +20,7 @@ const Register = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+
 
 
   const handleRegister = async () => {

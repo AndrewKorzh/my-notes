@@ -81,7 +81,7 @@ async def delete_notes(username: str, delete_request: DeleteNotesRequest):
     db = DBHandler(DB_PATH)
     success = db.delete_notes(username=username, note_ids=delete_request.note_ids)
     if success:
-        return {"message": f"Заметки {delete_request.note_ids} успешно удалены для {username}"}
+        return {"message": f"Заметки успешно удалены для {username}", "ids": delete_request.note_ids}
     else:
         raise HTTPException(status_code=400, detail="Ошибка при удалении заметок или заметки не принадлежат пользователю")
 

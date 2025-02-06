@@ -59,7 +59,7 @@ const MyDialog = ({ open, onClose, records, setRecords, baseURL, token, onAddRec
           fullWidth
           onChange={handleChange}
           sx={{
-            width: '400px',
+            width: '250px',
             maxHeight: '400px',
             marginTop: '8px',
             display: 'block',
@@ -82,10 +82,7 @@ const Home = () => {
     const { globalState } = useContext(AppContext)
     const baseURL = globalState.baseURL
 
-  const [records, setRecords] = useState([
-    // { id: 106, text: "Привет. Вообщем сегодня я решил пойти погулять и втретил одного человека. Он был похож на тебя оч сильно.", created_at: "2025-02-05 17:00:00" },
-    // { id: 107, text: "Ещё одна запись", created_at: "2025-02-05 17:10:00" },
-  ]);
+  const [records, setRecords] = useState([]);
 
   useEffect(() => {
     // Функция для загрузки записей при монтировании компонента
@@ -118,21 +115,43 @@ const Home = () => {
   const handleSelect = (id) => {
     setSelectedRecords((prevSelected) =>
       prevSelected.includes(id)
-        ? prevSelected.filter((recordId) => recordId !== id) // Удалить, если уже выбрано
-        : [...prevSelected, id] // Добавить, если не выбрано
+        ? prevSelected.filter((recordId) => recordId !== id)
+        : [...prevSelected, id]
     );
   }
 
-  const handleDelete = () => {
-    setRecords((prevRecords) =>
-      prevRecords.filter((record) => !selectedRecords.includes(record.id))
-    );
-    setSelectedRecords([]); // Сбрасываем выбранные записи после удаления
+  const handleDelete = async () => {
+    try {
+      const response = await fetch(`${baseURL}/notes/delete_user_notes`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "authorization-client": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          note_ids: selectedRecords,
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        setRecords((prevRecords) =>
+          prevRecords.filter((record) => !selectedRecords.includes(record.id))
+        );
+        setSelectedRecords([]);
+      } else {
+        alert(`Ошибка при удалении записей: ${data.message}`);
+      }
+    } catch (error) {
+      console.error("Ошибка при удалении записей:", error);
+      alert("Не удалось удалить записи");
+    }
   };
 
   const handleAddRecord = (newRecord) => {
     setRecords([...records, newRecord]);
-    setOpen(false); // Закрыть диалог после добавления
+    setOpen(false);
   };
 
   

@@ -7,7 +7,7 @@ import "./index.css";
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
-    <AppProvider> {/* Новый провайдер для глобальных переменных */}
+    <AppProvider>
       <App />
     </AppProvider>
   </React.StrictMode>

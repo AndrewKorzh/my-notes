@@ -1,5 +1,6 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import { AuthContext } from "../context/AuthContext";
+import { AppContext } from "../context/AppContext";
 
 import { 
   TextField, Button, Card, CardContent, Typography, Box, Dialog, DialogTitle, 
@@ -7,46 +8,110 @@ import {
   TableHead, TableRow, Checkbox, Paper 
 } from "@mui/material";
 
-const MyDialog = ({ open, onClose }) => {
+const MyDialog = ({ open, onClose, records, setRecords, baseURL, token, onAddRecord }) => {
   const [value, setValue] = useState('');
+
   const handleChange = (e) => {
     setValue(e.target.value);
   };
+
+  const handleSave = async () => {
+    try {
+      const response = await fetch(`${baseURL}/notes/add_note`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "authorization-client": `Bearer ${token}`,
+        },
+        body: JSON.stringify({"text": value}),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        const newRecord = {
+          id: data.id,
+          text: data.text,
+          created_at: data.created_at 
+        }
+        console.log(newRecord);
+        onAddRecord(newRecord);
+        setValue('');
+      } else {
+        alert(`Ошибка при добавлении записи: ${data.message}`);
+      }
+    } catch (error) {
+      console.error("Ошибка при сохранении записи:", error);
+      alert("Не удалось сохранить запись");
+    }
+  };
+
   return (
     <Dialog open={open} onClose={onClose} disableScrollLock>
       <DialogTitle>Добавить запись</DialogTitle>
       <DialogContent>
-      <TextField
-        label="Запись"
-        multiline
-        rows={6}
-        variant="outlined"
-        value={value}
-        fullWidth
-        onChange={handleChange}
-        sx={{
-          width: '400px',
-          maxHeight: '400px',
-          marginTop: '8px',
-          display: 'block',
-        }}
-      />
+        <TextField
+          label="Запись"
+          multiline
+          rows={6}
+          variant="outlined"
+          value={value}
+          fullWidth
+          onChange={handleChange}
+          sx={{
+            width: '400px',
+            maxHeight: '400px',
+            marginTop: '8px',
+            display: 'block',
+          }}
+        />
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} color="primary">Закрыть</Button>
+        <Button onClick={handleSave} color="primary">Сохранить</Button>
       </DialogActions>
     </Dialog>
   );
 };
 
+
 const Home = () => {
   const { token, username, logout } = useContext(AuthContext);
   const [open, setOpen] = useState(false);
 
+    const { globalState } = useContext(AppContext)
+    const baseURL = globalState.baseURL
+
   const [records, setRecords] = useState([
-    { id: 106, text: "Привет. Вообщем сегодня я решил пойти погулять и втретил одного человека. Он был похож на тебя оч сильно.", created_at: "2025-02-05 17:00:00" },
-    { id: 107, text: "Ещё одна запись", created_at: "2025-02-05 17:10:00" },
+    // { id: 106, text: "Привет. Вообщем сегодня я решил пойти погулять и втретил одного человека. Он был похож на тебя оч сильно.", created_at: "2025-02-05 17:00:00" },
+    // { id: 107, text: "Ещё одна запись", created_at: "2025-02-05 17:10:00" },
   ]);
+
+  useEffect(() => {
+    // Функция для загрузки записей при монтировании компонента
+    const fetchRecords = async () => {
+      try {
+        const response = await fetch(`${baseURL}/notes/all_user_notes`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "authorization-client": `Bearer ${token}`,
+          }
+        });
+        const data = await response.json();
+        if (response.ok) {
+          setRecords(data.notes); // Сохраняем данные в состоянии records
+        } else {
+          alert(`Ошибка при загрузке записей: ${data.message}`);
+        }
+      } catch (error) {
+        console.error("Ошибка при загрузке записей:", error);
+        alert("Не удалось загрузить записи");
+      }
+    };
+
+    fetchRecords();
+  }, []);
 
   const [selectedRecords, setSelectedRecords] = useState([]);
 
@@ -57,6 +122,18 @@ const Home = () => {
         : [...prevSelected, id] // Добавить, если не выбрано
     );
   }
+
+  const handleDelete = () => {
+    setRecords((prevRecords) =>
+      prevRecords.filter((record) => !selectedRecords.includes(record.id))
+    );
+    setSelectedRecords([]); // Сбрасываем выбранные записи после удаления
+  };
+
+  const handleAddRecord = (newRecord) => {
+    setRecords([...records, newRecord]);
+    setOpen(false); // Закрыть диалог после добавления
+  };
 
   
   return (
@@ -149,12 +226,29 @@ const Home = () => {
         </TableContainer>
 
 
-        {/* Кнопка добавления записи */}
+        {/* Кнопки управления */}
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 3 }}>
           <Button variant="contained" onClick={() => setOpen(true)}>Добавить запись</Button>
+          {/* Кнопка для удаления выбранных записей */}
+          <Button 
+            variant="contained" 
+            color="error" 
+            onClick={handleDelete} 
+            disabled={selectedRecords.length === 0} // Деактивировать, если нет выбранных записей
+          >
+            Удалить выбранные записи
+          </Button>
         </Box>
 
-        <MyDialog open={open} onClose={() => setOpen(false)} />
+        <MyDialog 
+        open={open} 
+        onClose={() => setOpen(false)} 
+        records={records} 
+        setRecords={setRecords} 
+        baseURL={baseURL}
+        token={token} 
+        onAddRecord={handleAddRecord} // Передаем функцию для добавления записи
+      />
       </CardContent>
     </Card>
   );

@@ -68,9 +68,10 @@ async def all_user_notes(username: str):
 @app.post("/add_note/{username}")
 async def add_note(username: str, note: NoteRequest):
     db = DBHandler(DB_PATH)
+    # Ой, мы там что так что эдак строку даём, поэтому - переделать потом
     success = db.add_note(username=username, text=note.text)
     if success:
-        return {"message": f"Заметка добавлена для {username}"}
+        return success
     else:
         raise HTTPException(status_code=500, detail="Ошибка при добавлении заметки")
     

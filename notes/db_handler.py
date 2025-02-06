@@ -24,7 +24,10 @@ class DBHandler:
         try:
             self.cursor.execute("INSERT INTO notes (username, text) VALUES (?, ?)", (username, text))
             self.conn.commit()
-            return True
+            last_id = self.cursor.lastrowid
+            self.cursor.execute("SELECT text, created_at FROM notes WHERE id = ?", (last_id,))
+            record = self.cursor.fetchone()
+            return {"id": last_id, "text": record[0], "created_at": record[1]}
         except sqlite3.Error as e:
             return f"Ошибка базы данных при добавлении записи: {str(e)}"
 

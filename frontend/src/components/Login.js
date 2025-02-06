@@ -22,7 +22,7 @@ const Login = () => {
     try {
       const response = await axios.post(`${baseURL}/authorization/login`, data);
       if (response.data.access_token) {
-        login(response.data.access_token)
+        login(response.data.access_token, username)
         console.log('Access Token:', response.data.access_token);
       } else {
         setError('Ошибка при получении токена');

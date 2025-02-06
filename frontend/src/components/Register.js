@@ -39,7 +39,7 @@ const Register = () => {
       const response = await axios.post(`${baseURL}/authorization/register`, data);
       if (response.data.access_token) {
         localStorage.setItem("registeredUser", username);
-        login(response.data.access_token)
+        login(response.data.access_token, username)
         console.log('Access Token:', response.data.access_token);
       } else {
         setError('Ошибка при получении токена');
